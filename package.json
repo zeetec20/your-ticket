@@ -1,12 +1,15 @@
 {
-  "scripts": {
-    "start": "vercel dev",
-    "deploy": "vercel"
-  },
   "dependencies": {
+    "@neondatabase/serverless": "^0.9.0",
+    "drizzle-orm": "^0.30.8",
     "hono": "^4.2.3"
   },
+  "scripts": {
+    "dev": "bun run --hot src/server.ts",
+    "migration:gen": "bunx drizzle-kit generate:pg",
+    "migration:migrate": "bun run src/db/migrate.ts"
+  },
   "devDependencies": {
-    "vercel": "^32.4.1"
+    "drizzle-kit": "^0.20.14"
   }
 }
