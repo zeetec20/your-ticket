@@ -15,6 +15,20 @@
       "when": 1713186542319,
       "tag": "0001_broken_ricochet",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1713202257611,
+      "tag": "0002_faulty_solo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1713273299435,
+      "tag": "0003_conscious_prodigy",
+      "breakpoints": true
     }
   ]
 }

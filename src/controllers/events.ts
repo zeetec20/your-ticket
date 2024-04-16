@@ -1,0 +1,34 @@
+import { createFactory } from "hono/factory";
+import { authenticated } from "../routes/middlewares";
+import db from "../db";
+import { IResponse } from "../utils/response";
+import { eventsValidations } from "../validations";
+import { events } from "../db/schema";
+
+const { createHandlers } = createFactory();
+
+export const all = createHandlers(async (c) => {
+  const events = await db.query.events.findMany().execute();
+
+  return c.json<IResponse>({
+    data: events,
+  });
+});
+
+export const register = createHandlers(
+  authenticated,
+  eventsValidations.register,
+  async (c) => {
+    const eventJson = c.req.valid("json");
+    const event = (
+      await db
+        .insert(events)
+        .values({ ...eventJson, registeredBy: c.get("jwtPayload").id })
+        .returning()
+    )[0];
+
+    return c.json<IResponse>({
+      data: event,
+    });
+  }
+);

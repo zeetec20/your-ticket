@@ -1,8 +1,11 @@
 {
   "dependencies": {
+    "@hono/zod-validator": "^0.2.1",
     "@neondatabase/serverless": "^0.9.0",
     "drizzle-orm": "^0.30.8",
-    "hono": "^4.2.3"
+    "drizzle-zod": "^0.5.1",
+    "hono": "^4.2.3",
+    "zod": "^3.22.4"
   },
   "scripts": {
     "dev": "bun run --hot src/server.ts",
@@ -10,6 +13,8 @@
     "migration:migrate": "bun run src/db/migrate.ts"
   },
   "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "@types/bun": "^1.0.12",
     "drizzle-kit": "^0.20.14"
   }
 }
