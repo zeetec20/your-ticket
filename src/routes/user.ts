@@ -1,10 +1,11 @@
 import { Hono } from "hono";
-import authenticated from "./middlewares/authenticated";
+import { authenticated } from "./middlewares";
+import { userControllers } from "../controllers";
 
 const user = new Hono();
 
-user.get("/profile", authenticated, (c) => c.json({}));
+user.get("/profile", ...userControllers.profile);
 
-user.get("/history", authenticated, (c) => c.json({}));
+user.get("/history", ...userControllers.history);
 
 export default user;
