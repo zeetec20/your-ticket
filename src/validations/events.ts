@@ -9,7 +9,7 @@ export const register = createMiddleware(
   zValidator(
     "json",
     createInsertSchema(events, {
-      registeredBy: (s) => s.registeredBy.optional(),
+      registered_by: (s) => s.registered_by.optional(),
     })
   )
 );

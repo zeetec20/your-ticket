@@ -15,6 +15,18 @@ export const all = createHandlers(async (c) => {
   });
 });
 
+export const get = createHandlers(async (c) => {
+  const event = await db.query.events
+    .findFirst({
+      where: (events, { eq }) => eq(events.id, c.req.param("id")),
+    })
+    .execute();
+
+  return c.json<IResponse>({
+    data: event,
+  });
+});
+
 export const register = createHandlers(
   authenticated,
   eventsValidations.register,
@@ -23,7 +35,7 @@ export const register = createHandlers(
     const event = (
       await db
         .insert(events)
-        .values({ ...eventJson, registeredBy: c.get("jwtPayload").id })
+        .values({ ...eventJson, registered_by: c.get("jwtPayload").id })
         .returning()
     )[0];
 
