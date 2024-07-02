@@ -3,15 +3,19 @@ import { authenticated } from "../routes/middlewares";
 import db from "../db";
 import { IResponse } from "../utils/response";
 import { eventsValidations } from "../validations";
-import { events } from "../db/schema";
+import { events, guests } from "../db/schema";
+import { createCodeGuest, createQrGuest, eventNormalize } from "../utils/event";
+import { customAlphabet } from "nanoid";
+import QRCode from "qrcode";
 
 const { createHandlers } = createFactory();
 
 export const all = createHandlers(async (c) => {
   const events = await db.query.events.findMany().execute();
+  const eventsNormalized = events.map(eventNormalize);
 
   return c.json<IResponse>({
-    data: events,
+    data: eventsNormalized,
   });
 });
 
@@ -20,10 +24,23 @@ export const get = createHandlers(async (c) => {
     .findFirst({
       where: (events, { eq }) => eq(events.id, c.req.param("id")),
     })
-    .execute();
+    .execute()
+    .catch(() => null);
+  if (!event) {
+    return c.json(
+      {
+        error: {
+          status: 400,
+          message: "Event is not exist",
+        },
+      },
+      400
+    );
+  }
+  const eventNormalized = eventNormalize(event);
 
   return c.json<IResponse>({
-    data: event,
+    data: eventNormalized,
   });
 });
 
@@ -31,16 +48,58 @@ export const register = createHandlers(
   authenticated,
   eventsValidations.register,
   async (c) => {
-    const eventJson = c.req.valid("json");
+    const { title, organizer, description, image, date, timeEnd, timeStart } =
+      c.req.valid("json");
     const event = (
       await db
         .insert(events)
-        .values({ ...eventJson, registered_by: c.get("jwtPayload").id })
+        .values({
+          title,
+          organizer,
+          description,
+          image,
+          date,
+          timeEnd,
+          timeStart,
+          registeredBy: c.get("jwtPayload").id,
+        })
         .returning()
     )[0];
 
     return c.json<IResponse>({
       data: event,
+    });
+  }
+);
+
+export const guestRegister = createHandlers(
+  authenticated,
+  eventsValidations.guestRegister,
+  async (c) => {
+    const { name, eventId } = c.req.valid("json");
+    const event = await db.query.events.findFirst({
+      where: (events, { eq }) => eq(events.id, eventId),
+    });
+    if (!event) {
+      return c.json(
+        {
+          error: {
+            status: 400,
+            message: "Event is not exist",
+          },
+        },
+        400
+      );
+    }
+    const code = createCodeGuest(event);
+
+    const guest = (
+      await db.insert(guests).values({ name, eventId, code }).returning()
+    )[0];
+    const path = await createQrGuest(guest);
+
+    return c.json<IResponse>({
+      data: { ...guest, qr: path },
     });
   }
 );

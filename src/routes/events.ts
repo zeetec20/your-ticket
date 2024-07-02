@@ -9,7 +9,7 @@ events.get("/:id", ...eventsControllers.get);
 
 events.post("/register", ...eventsControllers.register);
 
-events.post("/guest/register", (c) => c.json({}));
+events.post("/guest/register", ...eventsControllers.guestRegister);
 
 events.post("/guest/unregister", (c) => c.json({}));
 

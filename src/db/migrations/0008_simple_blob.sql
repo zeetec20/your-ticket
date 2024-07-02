@@ -1,0 +1,1 @@
+ALTER TABLE "guests" ALTER COLUMN "code" SET NOT NULL;

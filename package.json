@@ -6,6 +6,8 @@
     "drizzle-orm": "^0.30.8",
     "drizzle-zod": "^0.5.1",
     "hono": "^4.2.3",
+    "nanoid": "^5.0.7",
+    "qrcode": "^1.5.3",
     "zod": "^3.22.4"
   },
   "scripts": {
@@ -16,6 +18,7 @@
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
     "@types/bun": "^1.0.12",
+    "@types/qrcode": "^1.5.5",
     "drizzle-kit": "^0.20.14"
   }
 }

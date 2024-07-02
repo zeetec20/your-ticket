@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { createInsertSchema } from "drizzle-zod";
 import { createFactory } from "hono/factory";
-import { events } from "../db/schema";
+import { events, guests } from "../db/schema";
 
 const { createMiddleware } = createFactory();
 
@@ -9,7 +9,16 @@ export const register = createMiddleware(
   zValidator(
     "json",
     createInsertSchema(events, {
-      registered_by: (s) => s.registered_by.optional(),
+      registeredBy: (s) => s.registeredBy.optional(),
+    })
+  )
+);
+
+export const guestRegister = createMiddleware(
+  zValidator(
+    "json",
+    createInsertSchema(guests, {
+      code: (s) => s.code.optional(),
     })
   )
 );
