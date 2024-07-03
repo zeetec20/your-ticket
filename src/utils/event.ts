@@ -4,12 +4,23 @@ import { IEvent } from "../db/schema/events";
 import QRCode from "qrcode";
 import { isWord } from "./regex";
 
-type IEventNormalized = IEvent & { isDone: boolean };
+type IEventNormalized = IEvent & { isDone: boolean; isGoingOn: boolean };
 
 export const eventNormalize = (event: IEvent): IEventNormalized => {
+  const now = new Date(event.date);
+  const nowEnd = new Date();
+  const [hourEnd, minuteEnd] = event.timeEnd.split("-");
+  nowEnd.setHours(Number(hourEnd), Number(minuteEnd), 0, 0);
+
+  const nowStart = new Date();
+  const [hourStart, minuteStart] = event.timeStart.split("-");
+  nowStart.setHours(Number(hourStart), Number(minuteStart), 0, 0);
+
   return {
     ...event,
-    isDone: new Date().getTime() > new Date(event.date).getTime(),
+    isDone: nowEnd.getTime() > now.getTime(),
+    isGoingOn:
+      nowStart.getTime() < now.getTime() && nowEnd.getTime() > now.getTime(),
   };
 };
 
@@ -30,3 +41,6 @@ export const createCodeGuest = (event: IEvent) => {
     .join("");
   return `${suffixCode}-${customAlphabet("1234567890", 5)()}`;
 };
+
+export const getGuestQRPath = (guest: IGuest) =>
+  `public/storage/guest-qr/${guest.code}.png`;

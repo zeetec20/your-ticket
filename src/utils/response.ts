@@ -1,5 +1,5 @@
 export interface IResponse {
-  data?: Object | Object[];
+  data?: Object | Object[] | null;
   error?: {
     status: number;
     message: string;

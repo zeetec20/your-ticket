@@ -4,9 +4,14 @@ import db from "../db";
 import { IResponse } from "../utils/response";
 import { eventsValidations } from "../validations";
 import { events, guests } from "../db/schema";
-import { createCodeGuest, createQrGuest, eventNormalize } from "../utils/event";
-import { customAlphabet } from "nanoid";
-import QRCode from "qrcode";
+import {
+  createCodeGuest,
+  createQrGuest,
+  eventNormalize,
+  getGuestQRPath,
+} from "../utils/event";
+import { eq } from "drizzle-orm";
+import { unlink } from "node:fs/promises";
 
 const { createHandlers } = createFactory();
 
@@ -44,12 +49,64 @@ export const get = createHandlers(async (c) => {
   });
 });
 
+export const getWithGuest = createHandlers(authenticated, async (c) => {
+  const id = c.get("jwtPayload").id;
+  const event = await db.query.events
+    .findFirst({
+      where: (events, { eq }) => eq(events.id, c.req.param("id")),
+      with: {
+        guests: true,
+      },
+    })
+    .execute()
+    .catch(() => null);
+  if (!event) {
+    return c.json(
+      {
+        error: {
+          status: 400,
+          message: "Event is not exist",
+        },
+      },
+      400
+    );
+  }
+  if (event.registeredBy !== id) {
+    return c.json(
+      {
+        error: {
+          status: 400,
+          message: "You can't access data guest this event",
+        },
+      },
+      400
+    );
+  }
+  event.guests = event.guests.map((guest) => ({
+    ...guest,
+    qr: getGuestQRPath(guest),
+  }));
+  const eventNormalized = eventNormalize(event);
+
+  return c.json<IResponse>({
+    data: eventNormalized,
+  });
+});
+
 export const register = createHandlers(
   authenticated,
   eventsValidations.register,
   async (c) => {
-    const { title, organizer, description, image, date, timeEnd, timeStart } =
-      c.req.valid("json");
+    const {
+      title,
+      organizer,
+      description,
+      image,
+      date,
+      days,
+      timeEnd,
+      timeStart,
+    } = c.req.valid("json");
     const event = (
       await db
         .insert(events)
@@ -59,6 +116,7 @@ export const register = createHandlers(
           description,
           image,
           date,
+          days,
           timeEnd,
           timeStart,
           registeredBy: c.get("jwtPayload").id,
@@ -100,6 +158,38 @@ export const guestRegister = createHandlers(
 
     return c.json<IResponse>({
       data: { ...guest, qr: path },
+    });
+  }
+);
+
+export const guestUnregister = createHandlers(
+  authenticated,
+  eventsValidations.guestUnregister,
+  async (c) => {
+    const { id } = c.req.valid("json");
+    const guest = await db.query.guests
+      .findFirst({
+        where: (guests, { eq }) => eq(guests.id, id),
+      })
+      .execute()
+      .catch(() => null);
+    if (!guest) {
+      return c.json(
+        {
+          error: {
+            status: 400,
+            message: "Guest is not exist",
+          },
+        },
+        400
+      );
+    }
+    const path = getGuestQRPath(guest);
+    await db.delete(guests).where(eq(guests.id, id)).execute();
+    await unlink(path).catch(() => null);
+
+    return c.json<IResponse>({
+      data: null,
     });
   }
 );

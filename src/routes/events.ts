@@ -7,11 +7,13 @@ events.get("/", ...eventsControllers.all);
 
 events.get("/:id", ...eventsControllers.get);
 
+events.get("/:id/guest", ...eventsControllers.getWithGuest);
+
 events.post("/register", ...eventsControllers.register);
 
 events.post("/guest/register", ...eventsControllers.guestRegister);
 
-events.post("/guest/unregister", (c) => c.json({}));
+events.post("/guest/unregister", ...eventsControllers.guestUnregister);
 
 events.post("/guest/attend", (c) => c.json({}));
 

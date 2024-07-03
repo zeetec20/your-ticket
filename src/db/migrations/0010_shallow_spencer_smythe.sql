@@ -1,0 +1,2 @@
+ALTER TABLE "events"
+ADD COLUMN "days" numeric NOT NULL DEFAULT 1;

@@ -7,7 +7,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { events } from "./events";
 import { tableBasic } from "../../utils/db";
-import { InferSelectModel } from "drizzle-orm";
+import { InferSelectModel, relations } from "drizzle-orm";
 
 export const guests = pgTable("guests", {
   ...tableBasic,
@@ -19,5 +19,13 @@ export const guests = pgTable("guests", {
     .notNull()
     .references(() => events.id, { onDelete: "cascade" }),
 });
+
+export const guestsRelations = relations(guests, ({ one }) => ({
+  events: one(events, {
+    fields: [guests.eventId],
+    references: [events.id],
+    relationName: "events",
+  }),
+}));
 
 export type IGuest = InferSelectModel<typeof guests>;
