@@ -24,6 +24,16 @@ export const eventNormalize = (event: IEvent): IEventNormalized => {
   };
 };
 
+type IGuestNormalized = IGuest & { isAttended: boolean; qr: string };
+
+export const guestNormalize = (guest: IGuest): IGuestNormalized => {
+  return {
+    ...guest,
+    isAttended: !!guest.attendedAt,
+    qr: getGuestQRPath(guest),
+  };
+};
+
 export const createQrGuest = async (guest: IGuest) => {
   const qrPath = `public/storage/guest-qr/${guest.code}.png`;
   const buffer = await QRCode.toBuffer(btoa(guest.id), {

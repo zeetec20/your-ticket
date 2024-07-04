@@ -13,7 +13,6 @@ export const guests = pgTable("guests", {
   ...tableBasic,
   code: varchar("code", { length: 255 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  isAttended: boolean("is_attended").default(false).notNull(),
   attendedAt: timestamp("attended_at"),
   eventId: uuid("event_id")
     .notNull()
@@ -21,10 +20,10 @@ export const guests = pgTable("guests", {
 });
 
 export const guestsRelations = relations(guests, ({ one }) => ({
-  events: one(events, {
+  event: one(events, {
     fields: [guests.eventId],
     references: [events.id],
-    relationName: "events",
+    relationName: "event",
   }),
 }));
 

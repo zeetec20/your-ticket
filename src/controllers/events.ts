@@ -9,9 +9,12 @@ import {
   createQrGuest,
   eventNormalize,
   getGuestQRPath,
+  guestNormalize,
 } from "../utils/event";
 import { eq } from "drizzle-orm";
 import { unlink } from "node:fs/promises";
+import Jimp from "jimp";
+import jsQR from "jsqr";
 
 const { createHandlers } = createFactory();
 
@@ -36,7 +39,7 @@ export const get = createHandlers(async (c) => {
       {
         error: {
           status: 400,
-          message: "Event is not exist",
+          message: "event is not exist",
         },
       },
       400
@@ -65,7 +68,7 @@ export const getWithGuest = createHandlers(authenticated, async (c) => {
       {
         error: {
           status: 400,
-          message: "Event is not exist",
+          message: "event is not exist",
         },
       },
       400
@@ -76,16 +79,13 @@ export const getWithGuest = createHandlers(authenticated, async (c) => {
       {
         error: {
           status: 400,
-          message: "You can't access data guest this event",
+          message: "you can't access data guest this event",
         },
       },
       400
     );
   }
-  event.guests = event.guests.map((guest) => ({
-    ...guest,
-    qr: getGuestQRPath(guest),
-  }));
+  event.guests = event.guests.map(guestNormalize);
   const eventNormalized = eventNormalize(event);
 
   return c.json<IResponse>({
@@ -143,7 +143,7 @@ export const guestRegister = createHandlers(
         {
           error: {
             status: 400,
-            message: "Event is not exist",
+            message: "event is not exist",
           },
         },
         400
@@ -154,10 +154,10 @@ export const guestRegister = createHandlers(
     const guest = (
       await db.insert(guests).values({ name, eventId, code }).returning()
     )[0];
-    const path = await createQrGuest(guest);
+    const guestNormalized = guestNormalize(guest);
 
     return c.json<IResponse>({
-      data: { ...guest, qr: path },
+      data: guestNormalized,
     });
   }
 );
@@ -191,5 +191,80 @@ export const guestUnregister = createHandlers(
     return c.json<IResponse>({
       data: null,
     });
+  }
+);
+
+export const attend = createHandlers(
+  authenticated,
+  eventsValidations.attend,
+  async (c) => {
+    const { ticket } = c.req.valid("form");
+    const buffer = await (ticket as Blob).arrayBuffer();
+    const image = await Jimp.read(Buffer.from(buffer));
+    const decodedQr = jsQR(
+      new Uint8ClampedArray(image.bitmap.data),
+      image.bitmap.width,
+      image.bitmap.height
+    );
+    if (!decodedQr) {
+      return c.json(
+        {
+          error: {
+            status: 400,
+            message: "ticket is invalid",
+          },
+        },
+        400
+      );
+    }
+    const id: string = await new Promise((resolve) => {
+      try {
+        const decode = atob(decodedQr.data);
+        resolve(decode);
+      } catch (_) {
+        resolve("");
+      }
+    });
+    const guest = await db.query.guests
+      .findFirst({
+        where: (guests, { eq }) => eq(guests.id, id),
+        with: {
+          event: true,
+        },
+      })
+      .execute()
+      .catch(() => null);
+    if (!guest) {
+      return c.json(
+        {
+          error: {
+            status: 400,
+            message: "ticket is invalid",
+          },
+        },
+        400
+      );
+    }
+    if (eventNormalize(guest.event).isDone) {
+      return c.json(
+        {
+          error: {
+            status: 400,
+            message: "event was done, ticket expired",
+          },
+        },
+        400
+      );
+    }
+    const guestUpdated = (
+      await db
+        .update(guests)
+        .set({ attendedAt: new Date() })
+        .where(eq(guests.id, id))
+        .returning()
+    )?.[0];
+
+    const guestNormalized = guestNormalize(guestUpdated);
+    return c.json<IResponse>({ data: guestNormalized });
   }
 );

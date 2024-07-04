@@ -1,0 +1,1 @@
+ALTER TABLE "guests" DROP COLUMN IF EXISTS "is_attended";

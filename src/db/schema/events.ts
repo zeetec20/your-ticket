@@ -29,7 +29,7 @@ export const events = pgTable("events", {
 
 export const eventsRelations = relations(events, ({ many, one }) => ({
   guests: many(guests, {
-    relationName: "events",
+    relationName: "event",
   }),
   registeredByUser: one(users, {
     fields: [events.registeredBy],

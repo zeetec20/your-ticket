@@ -15,6 +15,6 @@ events.post("/guest/register", ...eventsControllers.guestRegister);
 
 events.post("/guest/unregister", ...eventsControllers.guestUnregister);
 
-events.post("/guest/attend", (c) => c.json({}));
+events.post("/guest/attend", ...eventsControllers.attend);
 
 export default events;
